@@ -247,6 +247,17 @@ class GaiaTestCase(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)
         self.marionette.__class__ = type('Marionette', (Marionette, MarionetteTouchMixin), {})
+
+        self.device_manager.shellCheckOutput(['stop', 'b2g'])
+        self.marionette.client.close()
+        self.marionette.session = None
+        self.marionette.window = None
+        time.sleep(2)
+        self.device_manager.shellCheckOutput(['start', 'b2g'])
+        self.marionette.wait_for_port()
+        time.sleep(15)
+        self.marionette.start_session()
+
         self.marionette.setup_touch()
 
         # the emulator can be really slow!
@@ -294,9 +305,6 @@ class GaiaTestCase(MarionetteTestCase):
             for filename in self.data_layer.media_files:
                 self.device_manager.removeFile('/'.join(['sdcard', filename]))
 
-        # unlock
-        self.lockscreen.unlock()
-
         # kill any open apps
         self.apps.kill_all()
 
@@ -311,6 +319,9 @@ class GaiaTestCase(MarionetteTestCase):
 
         # remove data
         self.data_layer.remove_all_contacts(self._script_timeout)
+
+        # unlock lock screen
+        self.lockscreen.unlock()
 
         # reset to home screen
         self.marionette.execute_script("window.wrappedJSObject.dispatchEvent(new Event('home'));")
